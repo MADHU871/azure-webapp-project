@@ -7,10 +7,9 @@ pipeline {
         DOCKER_IMAGE = "mad0008271/azure-webapp"
         DOCKER_TAG = "latest"
 
-        CONTAINER_NAME = "azure-webapp-container"
-
-        AZURE_WEBAPP_NAME = "myazurewebapp12345"
         AZURE_RESOURCE_GROUP = "azure-webapp-group"
+        AZURE_WEBAPP_NAME = "myazurewebapp12345"
+
     }
 
     triggers {
@@ -38,7 +37,7 @@ pipeline {
                 sh 'node -v'
                 sh 'npm -v'
                 sh 'docker --version'
-                sh 'az --version || true'
+                sh 'az --version'
 
             }
         }
@@ -76,9 +75,7 @@ pipeline {
 
             steps {
 
-                sh '''
-                    docker images
-                '''
+                sh 'docker images'
 
             }
         }
@@ -99,9 +96,11 @@ pipeline {
             steps {
 
                 withCredentials([usernamePassword(
+
                     credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
+
                 )]) {
 
                     sh '''
@@ -150,10 +149,10 @@ pipeline {
             steps {
 
                 sh '''
-                    docker rm -f $CONTAINER_NAME || true
+                    docker rm -f azure-webapp-container || true
 
                     docker run -d \
-                    --name $CONTAINER_NAME \
+                    --name azure-webapp-container \
                     -p 3005:3000 \
                     $DOCKER_IMAGE:$DOCKER_TAG
                 '''
@@ -165,9 +164,7 @@ pipeline {
 
             steps {
 
-                sh '''
-                    docker ps -a
-                '''
+                sh 'docker ps -a'
 
             }
         }
@@ -176,9 +173,7 @@ pipeline {
 
             steps {
 
-                sh '''
-                    docker logs $CONTAINER_NAME
-                '''
+                sh 'docker logs azure-webapp-container'
 
             }
         }
@@ -188,7 +183,7 @@ pipeline {
             steps {
 
                 sh '''
-                    docker cp package.json $CONTAINER_NAME:/app
+                    docker cp package.json azure-webapp-container:/app
                 '''
 
             }
@@ -199,27 +194,9 @@ pipeline {
             steps {
 
                 sh '''
-                    docker inspect $CONTAINER_NAME
+                    docker inspect azure-webapp-container
                 '''
 
-            }
-        }
-
-        stage('Test Azure Credentials') {
-
-            steps {
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'azure-creds',
-                    usernameVariable: 'AZ_USER',
-                    passwordVariable: 'AZ_PASS'
-                )]) {
-
-                    sh '''
-                        echo "Azure Credentials Found"
-                    '''
-
-                }
             }
         }
 
@@ -227,16 +204,38 @@ pipeline {
 
             steps {
 
-                withCredentials([usernamePassword(
-                    credentialsId: 'azure-creds',
-                    usernameVariable: 'AZURE_USER',
-                    passwordVariable: 'AZURE_PASS'
-                )]) {
+                withCredentials([
+
+                    string(
+                        credentialsId: 'azure-client-id',
+                        variable: 'AZURE_CLIENT_ID'
+                    ),
+
+                    string(
+                        credentialsId: 'azure-client-secret',
+                        variable: 'AZURE_CLIENT_SECRET'
+                    ),
+
+                    string(
+                        credentialsId: 'azure-tenant-id',
+                        variable: 'AZURE_TENANT_ID'
+                    ),
+
+                    string(
+                        credentialsId: 'azure-subscription-id',
+                        variable: 'AZURE_SUBSCRIPTION_ID'
+                    )
+
+                ]) {
 
                     sh '''
-                        az login \
-                        --username $AZURE_USER \
-                        --password $AZURE_PASS
+                        az login --service-principal \
+                        --username $AZURE_CLIENT_ID \
+                        --password $AZURE_CLIENT_SECRET \
+                        --tenant $AZURE_TENANT_ID
+
+                        az account set \
+                        --subscription $AZURE_SUBSCRIPTION_ID
                     '''
 
                 }
@@ -251,7 +250,7 @@ pipeline {
                     az webapp config container set \
                     --name $AZURE_WEBAPP_NAME \
                     --resource-group $AZURE_RESOURCE_GROUP \
-                    --docker-custom-image-name $DOCKER_IMAGE:$DOCKER_TAG
+                    --container-image-name $DOCKER_IMAGE:$DOCKER_TAG
                 '''
 
             }
@@ -288,7 +287,7 @@ pipeline {
             steps {
 
                 sh '''
-                    docker system prune -f
+                    docker image prune -f
                 '''
 
             }
