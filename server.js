@@ -1,12 +1,17 @@
-const express = require('express');
-const app = express();
+const express = require('express')
 
-const PORT = process.env.PORT || 3000;
+const app = express()
+
+const PORT = process.env.PORT || 3000
 
 app.get('/', (req, res) => {
-    res.send('<h1>Azure Web App Running Successfully 🚀</h1>');
-});
+
+    res.send('Azure Web App Running Successfully 🚀')
+
+})
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+
+    console.log(`Server running on port ${PORT}`)
+
+})
