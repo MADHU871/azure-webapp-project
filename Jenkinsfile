@@ -252,7 +252,7 @@ pipeline {
                     az webapp config container set \
                     --name $AZURE_WEBAPP_NAME \
                     --resource-group $AZURE_RESOURCE_GROUP \
-                    --container-image-name $DOCKER_IMAGE:latest
+                    --docker-custom-image-name $DOCKER_IMAGE:latest
                 '''
 
             }
@@ -276,7 +276,7 @@ pipeline {
             steps {
 
                 sh '''
-                    az webapp log tail \
+                    az webapp log show \
                     --name $AZURE_WEBAPP_NAME \
                     --resource-group $AZURE_RESOURCE_GROUP
                 '''
