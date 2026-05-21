@@ -13,7 +13,7 @@ pipeline {
 
     triggers {
 
-        githubPushTrigger()
+        githubPush()
     }
 
     stages {
@@ -24,6 +24,7 @@ pipeline {
 
                 git branch: 'main',
                 url: 'https://github.com/MADHU871/azure-webapp-project.git'
+
             }
         }
 
@@ -34,7 +35,8 @@ pipeline {
                 sh 'node -v'
                 sh 'npm -v'
                 sh 'docker --version'
-                sh 'az --version'
+                sh 'az --version || true'
+
             }
         }
 
@@ -43,6 +45,7 @@ pipeline {
             steps {
 
                 sh 'npm install'
+
             }
         }
 
@@ -51,6 +54,7 @@ pipeline {
             steps {
 
                 sh 'npm run build'
+
             }
         }
 
@@ -61,6 +65,7 @@ pipeline {
                 sh '''
                     docker build -t $DOCKER_IMAGE:latest .
                 '''
+
             }
         }
 
@@ -68,7 +73,10 @@ pipeline {
 
             steps {
 
-                sh 'docker images'
+                sh '''
+                    docker images
+                '''
+
             }
         }
 
@@ -79,6 +87,7 @@ pipeline {
                 sh '''
                     docker tag $DOCKER_IMAGE:latest $DOCKER_IMAGE:v1
                 '''
+
             }
         }
 
@@ -95,6 +104,7 @@ pipeline {
                     sh '''
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                     '''
+
                 }
             }
         }
@@ -106,6 +116,7 @@ pipeline {
                 sh '''
                     docker push $DOCKER_IMAGE:latest
                 '''
+
             }
         }
 
@@ -116,6 +127,7 @@ pipeline {
                 sh '''
                     docker push $DOCKER_IMAGE:v1
                 '''
+
             }
         }
 
@@ -126,6 +138,7 @@ pipeline {
                 sh '''
                     docker pull $DOCKER_IMAGE:latest
                 '''
+
             }
         }
 
@@ -141,6 +154,7 @@ pipeline {
                     -p 3005:3000 \
                     $DOCKER_IMAGE:latest
                 '''
+
             }
         }
 
@@ -148,7 +162,10 @@ pipeline {
 
             steps {
 
-                sh 'docker ps -a'
+                sh '''
+                    docker ps -a
+                '''
+
             }
         }
 
@@ -159,6 +176,7 @@ pipeline {
                 sh '''
                     docker logs $CONTAINER_NAME
                 '''
+
             }
         }
 
@@ -169,6 +187,7 @@ pipeline {
                 sh '''
                     docker cp package.json $CONTAINER_NAME:/app
                 '''
+
             }
         }
 
@@ -179,6 +198,7 @@ pipeline {
                 sh '''
                     docker inspect $CONTAINER_NAME
                 '''
+
             }
         }
 
@@ -188,10 +208,25 @@ pipeline {
 
                 withCredentials([
 
-                    string(credentialsId: 'azure-client-id', variable: 'AZURE_CLIENT_ID'),
-                    string(credentialsId: 'azure-client-secret', variable: 'AZURE_CLIENT_SECRET'),
-                    string(credentialsId: 'azure-tenant-id', variable: 'AZURE_TENANT_ID'),
-                    string(credentialsId: 'azure-subscription-id', variable: 'AZURE_SUBSCRIPTION_ID')
+                    string(
+                        credentialsId: 'azure-client-id',
+                        variable: 'AZURE_CLIENT_ID'
+                    ),
+
+                    string(
+                        credentialsId: 'azure-client-secret',
+                        variable: 'AZURE_CLIENT_SECRET'
+                    ),
+
+                    string(
+                        credentialsId: 'azure-tenant-id',
+                        variable: 'AZURE_TENANT_ID'
+                    ),
+
+                    string(
+                        credentialsId: 'azure-subscription-id',
+                        variable: 'AZURE_SUBSCRIPTION_ID'
+                    )
 
                 ]) {
 
@@ -204,6 +239,7 @@ pipeline {
                         az account set \
                         --subscription $AZURE_SUBSCRIPTION_ID
                     '''
+
                 }
             }
         }
@@ -218,6 +254,7 @@ pipeline {
                     --resource-group $AZURE_RESOURCE_GROUP \
                     --container-image-name $DOCKER_IMAGE:latest
                 '''
+
             }
         }
 
@@ -230,6 +267,7 @@ pipeline {
                     --name $AZURE_WEBAPP_NAME \
                     --resource-group $AZURE_RESOURCE_GROUP
                 '''
+
             }
         }
 
@@ -242,6 +280,7 @@ pipeline {
                     --name $AZURE_WEBAPP_NAME \
                     --resource-group $AZURE_RESOURCE_GROUP
                 '''
+
             }
         }
 
@@ -252,6 +291,7 @@ pipeline {
                 sh '''
                     docker system prune -f
                 '''
+
             }
         }
 
@@ -262,6 +302,7 @@ pipeline {
                 sh '''
                     docker logout
                 '''
+
             }
         }
     }
