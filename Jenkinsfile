@@ -228,13 +228,15 @@ pipeline {
             steps {
 
                 withCredentials([usernamePassword(
-                    credentialsId: 'azure-creds2',
+                    credentialsId: 'azure-creds',
                     usernameVariable: 'AZURE_USER',
                     passwordVariable: 'AZURE_PASS'
                 )]) {
 
                     sh '''
-                        az login --username $AZURE_USER --password $AZURE_PASS
+                        az login \
+                        --username $AZURE_USER \
+                        --password $AZURE_PASS
                     '''
 
                 }
