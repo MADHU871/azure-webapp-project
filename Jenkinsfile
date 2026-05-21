@@ -5,7 +5,8 @@ pipeline {
 
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/MADHU871/azure-webapp-project.git'
+                git branch: 'main',
+                url: 'https://github.com/MADHU871/azure-webapp-project.git'
             }
         }
 
@@ -23,7 +24,13 @@ pipeline {
 
         stage('Docker Login') {
             steps {
-                sh 'docker login -u mad0008271 -p YOUR_DOCKER_PASSWORD'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
             }
         }
 
