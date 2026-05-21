@@ -3,10 +3,9 @@ pipeline {
 
     stages {
 
-        stage('Git Pull') {
+        stage('Clone Repository') {
             steps {
-                git 'https://github.com/MADHU871/azure-webapp-project.git
-                // '
+                git 'https://github.com/MADHU871/azure-webapp-project.git'
             }
         }
 
@@ -16,15 +15,21 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Build Docker Image') {
             steps {
-                sh 'docker build -t mad0008271/azure-webapp .'
+                sh 'docker build -t mad0008271/azure-webapp:latest .'
             }
         }
 
-        stage('Docker Push') {
+        stage('Docker Login') {
             steps {
-                sh 'docker push mad0008271/azure-webapp'
+                sh 'docker login -u mad0008271 -p YOUR_DOCKER_PASSWORD'
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                sh 'docker push mad0008271/azure-webapp:latest'
             }
         }
 
