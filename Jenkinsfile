@@ -6,6 +6,9 @@ pipeline {
 
         DOCKER_IMAGE = "mad0008271/azure-webapp"
         CONTAINER_NAME = "azure-webapp-container"
+
+        AZURE_WEBAPP_NAME = "myazurewebapp12345"
+        AZURE_RESOURCE_GROUP = "azure-webapp-group"
     }
 
     triggers {
@@ -32,6 +35,7 @@ pipeline {
                 sh 'node -v'
                 sh 'npm -v'
                 sh 'docker --version'
+                sh 'az --version || true'
 
             }
         }
@@ -193,6 +197,88 @@ pipeline {
 
                 sh '''
                     docker inspect $CONTAINER_NAME
+                '''
+
+            }
+        }
+
+        stage('Azure Login') {
+
+            steps {
+
+                withCredentials([
+
+                    string(
+                        credentialsId: 'azure-client-id',
+                        variable: 'AZURE_CLIENT_ID'
+                    ),
+
+                    string(
+                        credentialsId: 'azure-client-secret',
+                        variable: 'AZURE_CLIENT_SECRET'
+                    ),
+
+                    string(
+                        credentialsId: 'azure-tenant-id',
+                        variable: 'AZURE_TENANT_ID'
+                    ),
+
+                    string(
+                        credentialsId: 'azure-subscription-id',
+                        variable: 'AZURE_SUBSCRIPTION_ID'
+                    )
+
+                ]) {
+
+                    sh '''
+                        az login --service-principal \
+                        --username $AZURE_CLIENT_ID \
+                        --password $AZURE_CLIENT_SECRET \
+                        --tenant $AZURE_TENANT_ID
+
+                        az account set \
+                        --subscription $AZURE_SUBSCRIPTION_ID
+                    '''
+
+                }
+            }
+        }
+
+        stage('Azure Deploy') {
+
+            steps {
+
+                sh '''
+                    az webapp config container set \
+                    --name $AZURE_WEBAPP_NAME \
+                    --resource-group $AZURE_RESOURCE_GROUP \
+                    --docker-custom-image-name $DOCKER_IMAGE:latest
+                '''
+
+            }
+        }
+
+        stage('Azure Restart WebApp') {
+
+            steps {
+
+                sh '''
+                    az webapp restart \
+                    --name $AZURE_WEBAPP_NAME \
+                    --resource-group $AZURE_RESOURCE_GROUP
+                '''
+
+            }
+        }
+
+        stage('Azure Logs') {
+
+            steps {
+
+                sh '''
+                    az webapp log show \
+                    --name $AZURE_WEBAPP_NAME \
+                    --resource-group $AZURE_RESOURCE_GROUP
                 '''
 
             }
