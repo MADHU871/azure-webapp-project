@@ -10,13 +10,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
     - name: Checkout Code
       uses: actions/checkout@v4
 
     - name: Setup Node
       uses: actions/setup-node@v4
       with:
-        node-version: 18
+        node-version: 20
 
     - name: Install Dependencies
       run: npm install
@@ -28,7 +29,7 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Build Docker Image
-      run: docker build -t yourdockerhubusername/azure-webapp .
+      run: docker build -t mad0008271/azure-webapp:latest .
 
     - name: Push Docker Image
-      run: docker push yourdockerhubusername/azure-webapp
+      run: docker push mad0008271/azure-webapp:latest
