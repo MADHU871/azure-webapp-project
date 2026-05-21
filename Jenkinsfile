@@ -5,17 +5,15 @@ pipeline {
     environment {
 
         DOCKER_IMAGE = "mad0008271/azure-webapp"
-        DOCKER_TAG = "latest"
+        CONTAINER_NAME = "azure-webapp-container"
 
-        AZURE_RESOURCE_GROUP = "azure-webapp-group"
         AZURE_WEBAPP_NAME = "myazurewebapp12345"
-
+        AZURE_RESOURCE_GROUP = "azure-webapp-group"
     }
 
     triggers {
 
-        githubPush()
-
+        githubPushTrigger()
     }
 
     stages {
@@ -26,7 +24,6 @@ pipeline {
 
                 git branch: 'main',
                 url: 'https://github.com/MADHU871/azure-webapp-project.git'
-
             }
         }
 
@@ -38,7 +35,6 @@ pipeline {
                 sh 'npm -v'
                 sh 'docker --version'
                 sh 'az --version'
-
             }
         }
 
@@ -47,7 +43,6 @@ pipeline {
             steps {
 
                 sh 'npm install'
-
             }
         }
 
@@ -56,7 +51,6 @@ pipeline {
             steps {
 
                 sh 'npm run build'
-
             }
         }
 
@@ -65,9 +59,8 @@ pipeline {
             steps {
 
                 sh '''
-                    docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+                    docker build -t $DOCKER_IMAGE:latest .
                 '''
-
             }
         }
 
@@ -76,7 +69,6 @@ pipeline {
             steps {
 
                 sh 'docker images'
-
             }
         }
 
@@ -85,9 +77,8 @@ pipeline {
             steps {
 
                 sh '''
-                    docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:v1
+                    docker tag $DOCKER_IMAGE:latest $DOCKER_IMAGE:v1
                 '''
-
             }
         }
 
@@ -96,17 +87,14 @@ pipeline {
             steps {
 
                 withCredentials([usernamePassword(
-
                     credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
-
                 )]) {
 
                     sh '''
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                     '''
-
                 }
             }
         }
@@ -116,9 +104,8 @@ pipeline {
             steps {
 
                 sh '''
-                    docker push $DOCKER_IMAGE:$DOCKER_TAG
+                    docker push $DOCKER_IMAGE:latest
                 '''
-
             }
         }
 
@@ -129,7 +116,6 @@ pipeline {
                 sh '''
                     docker push $DOCKER_IMAGE:v1
                 '''
-
             }
         }
 
@@ -138,9 +124,8 @@ pipeline {
             steps {
 
                 sh '''
-                    docker pull $DOCKER_IMAGE:$DOCKER_TAG
+                    docker pull $DOCKER_IMAGE:latest
                 '''
-
             }
         }
 
@@ -149,14 +134,13 @@ pipeline {
             steps {
 
                 sh '''
-                    docker rm -f azure-webapp-container || true
+                    docker rm -f $CONTAINER_NAME || true
 
                     docker run -d \
-                    --name azure-webapp-container \
+                    --name $CONTAINER_NAME \
                     -p 3005:3000 \
-                    $DOCKER_IMAGE:$DOCKER_TAG
+                    $DOCKER_IMAGE:latest
                 '''
-
             }
         }
 
@@ -165,7 +149,6 @@ pipeline {
             steps {
 
                 sh 'docker ps -a'
-
             }
         }
 
@@ -173,8 +156,9 @@ pipeline {
 
             steps {
 
-                sh 'docker logs azure-webapp-container'
-
+                sh '''
+                    docker logs $CONTAINER_NAME
+                '''
             }
         }
 
@@ -183,9 +167,8 @@ pipeline {
             steps {
 
                 sh '''
-                    docker cp package.json azure-webapp-container:/app
+                    docker cp package.json $CONTAINER_NAME:/app
                 '''
-
             }
         }
 
@@ -194,9 +177,8 @@ pipeline {
             steps {
 
                 sh '''
-                    docker inspect azure-webapp-container
+                    docker inspect $CONTAINER_NAME
                 '''
-
             }
         }
 
@@ -206,25 +188,10 @@ pipeline {
 
                 withCredentials([
 
-                    string(
-                        credentialsId: 'azure-client-id',
-                        variable: 'AZURE_CLIENT_ID'
-                    ),
-
-                    string(
-                        credentialsId: 'azure-client-secret',
-                        variable: 'AZURE_CLIENT_SECRET'
-                    ),
-
-                    string(
-                        credentialsId: 'azure-tenant-id',
-                        variable: 'AZURE_TENANT_ID'
-                    ),
-
-                    string(
-                        credentialsId: 'azure-subscription-id',
-                        variable: 'AZURE_SUBSCRIPTION_ID'
-                    )
+                    string(credentialsId: 'azure-client-id', variable: 'AZURE_CLIENT_ID'),
+                    string(credentialsId: 'azure-client-secret', variable: 'AZURE_CLIENT_SECRET'),
+                    string(credentialsId: 'azure-tenant-id', variable: 'AZURE_TENANT_ID'),
+                    string(credentialsId: 'azure-subscription-id', variable: 'AZURE_SUBSCRIPTION_ID')
 
                 ]) {
 
@@ -237,7 +204,6 @@ pipeline {
                         az account set \
                         --subscription $AZURE_SUBSCRIPTION_ID
                     '''
-
                 }
             }
         }
@@ -250,9 +216,8 @@ pipeline {
                     az webapp config container set \
                     --name $AZURE_WEBAPP_NAME \
                     --resource-group $AZURE_RESOURCE_GROUP \
-                    --container-image-name $DOCKER_IMAGE:$DOCKER_TAG
+                    --container-image-name $DOCKER_IMAGE:latest
                 '''
-
             }
         }
 
@@ -265,7 +230,6 @@ pipeline {
                     --name $AZURE_WEBAPP_NAME \
                     --resource-group $AZURE_RESOURCE_GROUP
                 '''
-
             }
         }
 
@@ -278,7 +242,6 @@ pipeline {
                     --name $AZURE_WEBAPP_NAME \
                     --resource-group $AZURE_RESOURCE_GROUP
                 '''
-
             }
         }
 
@@ -287,9 +250,8 @@ pipeline {
             steps {
 
                 sh '''
-                    docker image prune -f
+                    docker system prune -f
                 '''
-
             }
         }
 
@@ -300,7 +262,6 @@ pipeline {
                 sh '''
                     docker logout
                 '''
-
             }
         }
     }
@@ -310,19 +271,16 @@ pipeline {
         always {
 
             echo 'Pipeline Completed'
-
         }
 
         success {
 
             echo 'Pipeline Success ✅'
-
         }
 
         failure {
 
             echo 'Pipeline Failed ❌'
-
         }
     }
 }
