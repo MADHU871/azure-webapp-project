@@ -1,22 +1,10 @@
 {
   "name": "azure-webapp-project",
   "version": "1.0.0",
-  "description": "Azure Static Web App Deployment Project",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "build": "echo Build completed"
+    "build": "echo Build completed",
+    "start": "node server.js"
   },
-  "keywords": [
-    "azure",
-    "static-web-app",
-    "github-actions",
-    "docker",
-    "jenkins",
-    "ci-cd"
-  ],
-  "author": "madhusudhan",
-  "license": "ISC",
   "dependencies": {
     "express": "^4.18.2"
   }
